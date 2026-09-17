@@ -26,7 +26,7 @@ void SDL2Interface::createWindow(const char *title, int width, int height)
   this->windowHeight = height;
 
   // Allocate pixel buffer with the correct size
-  pixelBuffer.resize(windowWidth * windowHeight);
+  this->pixelBuffer.resize(static_cast<size_t>(windowWidth * windowHeight));
 
   // Start the SDL thread
   this->sdlThread = std::thread(&SDL2Interface::sdlMainLoop, this);
@@ -43,10 +43,10 @@ void SDL2Interface::sdlMainLoop()
 
   // Create window
   this->window = SDL_CreateWindow(
-      windowTitle.c_str(),
+      this->windowTitle.c_str(),
       SDL_WINDOWPOS_CENTERED,
       SDL_WINDOWPOS_CENTERED,
-      windowWidth, windowHeight,
+      this->windowWidth, this->windowHeight,
       SDL_WINDOW_SHOWN);
 
   if (!window)
@@ -72,7 +72,7 @@ void SDL2Interface::sdlMainLoop()
       renderer,
       SDL_PIXELFORMAT_RGB888,      // 24 bits per pixel (8 bits for each color channel, no alpha); We can use normal int32_t for the pixel buffer since the MSB will be ignored.
       SDL_TEXTUREACCESS_STREAMING, // We will be updating the texture frequently with new pixel data. This optimizes for that use case.
-      windowWidth, windowHeight);
+      this->windowWidth, this->windowHeight);
 
   if (!texture)
   {
@@ -90,25 +90,30 @@ void SDL2Interface::sdlMainLoop()
     SDL_Event e;
     while (SDL_PollEvent(&e) != 0)
     {
-      // Check if the user has requested to close the window (e.g., by clicking the close button)
       if (e.type == SDL_QUIT)
       {
         quit = true;
       }
 
-      // Check if ESC key is pressed. We can close the window with ESC key as well.
+      // Close the window with ESC key
       if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
       {
         quit = true;
       }
     }
 
-    // If we have new pixel data, update the texture
+    // If we have new pixel data in pixelBuffer, update the texture
     if (hasNewPixels.load())
     {
       // Lock the buffer mutex to safely access the pixel buffer
       std::lock_guard<std::mutex> lock(bufferMutex);
-      SDL_UpdateTexture(texture, nullptr, pixelBuffer.data(), windowWidth * sizeof(int32_t));
+
+      SDL_UpdateTexture(
+        texture, 
+        nullptr, 
+        pixelBuffer.data(), 
+        static_cast<size_t>(this->windowWidth) * sizeof(int32_t));
+      
       hasNewPixels = false; // Reset the flag after updating the texture
     }
 
@@ -121,8 +126,8 @@ void SDL2Interface::sdlMainLoop()
     std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
   }
 
-  std::cerr << "[C++ SDL2Interface] SDL main loop has exited and resources have been cleaned up." << std::endl;
-
+  std::cout << "[C++ SDL2Interface] SDL main loop has exited and resources will be cleaned up." << std::endl;
+  
   // When we exit the main loop, clean up SDL resources
   SDL_DestroyTexture(texture);
   SDL_DestroyRenderer(renderer);
@@ -135,8 +140,10 @@ void SDL2Interface::updateTexture(int32_t *newPixels)
 {
   // Lock the buffer mutex
   std::lock_guard<std::mutex> lock(bufferMutex);
+
   // Update the pixel buffer with the new pixel data
-  std::copy(newPixels, newPixels + (windowWidth * windowHeight), pixelBuffer.begin());
+  std::copy(newPixels, newPixels + (windowWidth * windowHeight), this->pixelBuffer.begin());
+  
   // Set the flag to indicate that we have new pixels to update the texture with
   hasNewPixels = true;
 }

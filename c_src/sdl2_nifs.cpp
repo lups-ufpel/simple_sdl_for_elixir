@@ -1,10 +1,8 @@
 /*
-    This file implements the Native Implemented Functions (NIFs) for creating windows and displaying rendered image data in a Linux system.
+    This NIF module provides functions to create windows and upate their pixel content using SDL2.
 
-    Made by: Henrique Gabriel Rodrigues for the OCL-PolyHok demonstration
+    Made by: Henrique Gabriel Rodrigues
     Oriented and supervised by: Prof. Dr. André Rauber Du Bois
-
-    This project is licensed under the MIT License. See the LICENSE file for more details.
 */
 
 #include <erl_nif.h>

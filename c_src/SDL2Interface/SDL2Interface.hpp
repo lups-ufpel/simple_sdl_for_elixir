@@ -14,7 +14,7 @@ class SDL2Interface
 private:
   // Well, I just discovered -- IN THE FUCKING WORST WAY POSSIBLE -- that SDL2 is NOT thread safe.
   // So, I'll have to make sure that all SDL2 calls are made from the same thread. The Erlang BEAM VM can
-  // schedules different threads for NIF calls, so this is breaking the GUI and making the system unstable.
+  // schedule different threads for NIF calls and this would break the GUI and make the system unstable.
 
   // SDL2 thread
   std::thread sdlThread;
@@ -23,11 +23,11 @@ private:
   std::vector<int32_t> pixelBuffer;
   std::mutex bufferMutex;
 
-  // Control flags
+  // Atomic control flags
   std::atomic<bool> quit;
   std::atomic<bool> hasNewPixels;
 
-  // Window stuff
+  // Window properties
   int windowWidth = 0;
   int windowHeight = 0;
   std::string windowTitle;
@@ -46,14 +46,14 @@ public:
 
   void createWindow(const char *title, int width, int height);
 
-  // Estou usando int32_t para os pixels porque o formato da textura é RGB888,
-  // que é um formato de 24 bits (8 bits para cada canal de cor e ignora o canal alpha).
-  // Isso é perfeito pois em Elixir o Nx usa inteiros de 32 bits com sinal, 
-  // e o byte mais significativo (MSB) pode ser ignorado, já que o formato RGB888 não usa o canal alpha.
-  // E agora esse CARALHO é thread safe, pois o buffer de pixels é protegido por um mutex e as flags de controle são atômicas.
+  // I'm using int32_t for the pixels because the texture format is RGB888,
+  // which is a 24-bit format (8 bits for each color channel, with the alpha channel ignored).
+  // This is perfect because the Nx library in Elixir uses signed 32-bit integers to represent pixels,
+  // and the most significant byte (MSB) can be ignored, since the RGB888 format does not use an alpha channel.
+  // And now this FUCK is thread-safe, so the pixel buffer is protected by a mutex and the control flags are atomic.
   void updateTexture(int32_t *newPixels);
 
-  // Thread-safe check if the window has been requested to close
+  // Thread-safe check to see if the window has been requested to close
   bool isCloseRequested() const { return quit.load(); }
 
   size_t getTextureSizeBytes() const { return sizeof(int32_t) * windowWidth * windowHeight; }
