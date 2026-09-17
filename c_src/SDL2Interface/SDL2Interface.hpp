@@ -54,7 +54,7 @@ public:
   void updateTexture(int32_t *newPixels);
 
   // Thread-safe check to see if the window has been requested to close
-  bool isCloseRequested() const { return quit.load(); }
+  bool willWindowClose() const { return quit.load(); }
 
   size_t getTextureSizeBytes() const { return sizeof(int32_t) * windowWidth * windowHeight; }
   int getWindowWidth() const { return windowWidth; }

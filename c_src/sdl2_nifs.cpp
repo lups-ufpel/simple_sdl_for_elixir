@@ -6,6 +6,7 @@
 */
 
 #include <erl_nif.h>
+#include <cstdlib>
 
 #include "SDL2Interface/SDL2Interface.hpp"
 
@@ -33,10 +34,10 @@ static int init_nifs(ErlNifEnv *env, void ** /* priv_data */, ERL_NIF_TERM /* lo
       sdl2 = nullptr;
     }
 
-    return 1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 // This function is called when the NIF library is unloaded. It cleans up the SDL2 interface instance.
@@ -50,7 +51,10 @@ static void unload_nifs(ErlNifEnv * /* env */, void * /* priv_data */)
 }
 
 // This nif creates a window with the specified title, width, and height using the SDL2 interface.
-// Args: title (string), width (int), height (int)
+// Parameters:
+// 1 - Window title (as a charlist)
+// 2 - Width (int)
+// 3 - Height (int)
 static ERL_NIF_TERM create_window_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
   if (argc != 3)
@@ -59,7 +63,7 @@ static ERL_NIF_TERM create_window_nif(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return enif_make_badarg(env);
   }
 
-  /// GET WINDOW NAME
+  // GET WINDOW NAME
   ERL_NIF_TERM e_window_name = argv[0];
   unsigned int size;
   if (!enif_get_list_length(env, e_window_name, &size))
@@ -67,10 +71,11 @@ static ERL_NIF_TERM create_window_nif(ErlNifEnv *env, int argc, const ERL_NIF_TE
     std::cerr << "[ERROR] Failed to get window name length." << std::endl;
     return enif_make_badarg(env);
   }
+
   char window_name[1024];
   enif_get_string(env, e_window_name, window_name, size + 1, ERL_NIF_LATIN1);
 
-  /// GET WIDTH AND HEIGHT
+  // GET WIDTH AND HEIGHT
   int width, height;
   if (!enif_get_int(env, argv[1], &width) || !enif_get_int(env, argv[2], &height))
   {
@@ -78,22 +83,25 @@ static ERL_NIF_TERM create_window_nif(ErlNifEnv *env, int argc, const ERL_NIF_TE
   }
 
   // Creating window
-  std::cout << "[C++ DEMO NIFS] Created window '" << window_name << "' with dimensions " << width << "x" << height << "." << std::endl;
-  std::cout << "[C++ DEMO NIFS] A new thread in C++ was created to run the SDL2 main loop, which will handle rendering and events for this window." << std::endl;
-
   sdl2->createWindow(window_name, width, height);
+  
+  std::cout << "[C++ SDL2_NIFS] Created window '" << window_name << "' with dimensions " << width << "x" << height << "." << std::endl;
+  std::cout << "[C++ SDL2_NIFS] A new thread in C++ was created to run the SDL2 main loop, which will handle rendering and events for this window." << std::endl;
 
   return enif_make_int(env, 0);
 }
 
-// Checks if the window has been requested to close
-static ERL_NIF_TERM close_requested_nif(ErlNifEnv *env, int /* argc */, const ERL_NIF_TERM /* argv */[])
+// Checks if the window will close
+// No parameters taken
+static ERL_NIF_TERM will_window_close_nif(ErlNifEnv *env, int /* argc */, const ERL_NIF_TERM /* argv */[])
 {
-  bool quit = sdl2->isCloseRequested();
+  bool quit = sdl2->willWindowClose();
   return enif_make_atom(env, quit ? "true" : "false");
 }
 
-// This NIF updates the texture of the SDL2 window with the new pixel data provided as Nx binary.
+// This NIF updates the texture of the SDL2 window with the new pixel data provided by the Nx array
+// Parameters:
+// 1 - Array with pixel data (as an Erlang binary)
 static ERL_NIF_TERM update_image_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
   if (argc != 1)
@@ -102,11 +110,11 @@ static ERL_NIF_TERM update_image_nif(ErlNifEnv *env, int argc, const ERL_NIF_TER
     return enif_make_badarg(env);
   }
 
-  // Get the pixel data as a binary
+  // Get the array
   ErlNifBinary new_pixel_data;
   if (!enif_inspect_binary(env, argv[0], &new_pixel_data))
   {
-    std::cerr << "[ERROR] Failed to get pixel data binary in update_image_nif." << std::endl;
+    std::cerr << "[ERROR] Failed to get array in update_image_nif." << std::endl;
     return enif_make_badarg(env);
   }
 
@@ -128,7 +136,7 @@ static ERL_NIF_TERM update_image_nif(ErlNifEnv *env, int argc, const ERL_NIF_TER
 
 static ErlNifFunc nif_funcs[] = {
     {.name = "create_window_nif", .arity = 3, .fptr = create_window_nif, .flags = 0},
-    {.name = "close_requested_nif", .arity = 0, .fptr = close_requested_nif, .flags = 0},
+    {.name = "will_window_close_nif", .arity = 0, .fptr = will_window_close_nif, .flags = 0},
     {.name = "update_image_nif", .arity = 1, .fptr = update_image_nif, .flags = 0}};
 
-ERL_NIF_INIT(Elixir.SDL2, nif_funcs, &init_nifs, NULL, NULL, &unload_nifs)
+ERL_NIF_INIT(Elixir.SimpleSDL2, nif_funcs, &init_nifs, NULL, NULL, &unload_nifs)
