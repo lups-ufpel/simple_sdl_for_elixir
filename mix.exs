@@ -1,13 +1,18 @@
-defmodule SimpleSdlForElixir.MixProject do
+defmodule SimpleSDL2.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :simple_sdl_for_elixir,
+      app: :simple_sdl2,
       version: "0.1.0",
-      elixir: "~> 1.20",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      compilers: [:cmake_compiler] ++ Mix.compilers(),
+      cmake_build_dir: "CMakeBuild",
+      cmake_source_dirs: ["c_src", "CMakeLists.txt"],
+      cmake_targets: ["priv/sdl2_nifs"]
     ]
   end
 
@@ -21,8 +26,7 @@ defmodule SimpleSdlForElixir.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:cmake_compiler, git: "https://github.com/lups-ufpel/poly_hok.git", sparse: "cmake_compiler"}
     ]
   end
 end
