@@ -26,6 +26,7 @@ defmodule SimpleSDL2.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:nx, "~> 0.9"},
       {:cmake_compiler, git: "https://github.com/lups-ufpel/poly_hok.git", sparse: "cmake_compiler"}
     ]
   end
