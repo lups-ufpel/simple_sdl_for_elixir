@@ -1,6 +1,6 @@
 defmodule SimpleSDL2 do
   @on_load :load_nifs
-  def load_nifs do
+  defp load_nifs do
     nif_path = Application.app_dir(:simple_sdl2, "priv/sdl2_nifs") |> to_charlist()
     ret = :erlang.load_nif(nif_path, 0)
 
@@ -17,15 +17,28 @@ defmodule SimpleSDL2 do
     end
   end
 
-  def create_window_nif(_title, _width, _height) do
+  # --------------- Public functions ---------------
+
+  def create_window(title, width, height), do: create_window_nif(to_charlist(title), width, height)
+
+  def will_window_close?(), do: will_window_close_nif()
+
+  def update_image(%Nx.Tensor{data: data}) do
+    %Nx.BinaryBackend{state: bin_array} = data
+
+    update_image_nif(bin_array)
+  end
+
+  # --------------- NIF stubs ---------------
+  defp create_window_nif(_title, _width, _height) do
     :erlang.nif_error(:nif_not_implemented)
   end
 
-  def close_requested_nif() do
+  defp will_window_close_nif() do
     :erlang.nif_error(:nif_not_implemented)
   end
 
-  def update_image_nif(_img_array) do
+  defp update_image_nif(_bin_array) do
     :erlang.nif_error(:nif_not_implemented)
   end
 end
