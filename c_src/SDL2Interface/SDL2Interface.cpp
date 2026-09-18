@@ -118,12 +118,8 @@ void SDL2Interface::sdlMainLoop()
     }
 
     // Render screen
-    SDL_RenderClear(renderer);                           // Clear the renderer with the current draw color (default is black)
     SDL_RenderCopy(renderer, texture, nullptr, nullptr); // Copy the entire texture to the renderer
     SDL_RenderPresent(renderer);                         // Update the screen with the rendered content
-
-    // Sleep for a short duration to limit the frame rate and reduce CPU usage
-    std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
   }
 
   std::cout << "[C++ SDL2Interface] SDL main loop has exited and resources will be cleaned up." << std::endl;
